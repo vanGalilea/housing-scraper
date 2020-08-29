@@ -39,7 +39,8 @@ def strip_number(element):
 
 
 for page_num in range(100):
-    URL = f'https://www.funda.nl/koop/{city}/straat-{street.replace(" ", "-")}/+{radius}km/p{page_num+1}'
+    URL = f'https://www.funda.nl/koop/{city.replace(" ", "-")}/straat-{street.replace(" ", "-")}/+{radius}km/p{page_num+1}'
+    print(URL)
     html = requests.get(URL, headers=headers)
     soup = BeautifulSoup(html.content, 'html.parser')
     results = soup.find_all('li', class_='search-result')
