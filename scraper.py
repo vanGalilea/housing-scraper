@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import json
+import os
 import re
 
 import requests
@@ -9,8 +10,21 @@ from bs4 import BeautifulSoup
 cleaned_results = []
 now = str(datetime.datetime.now())
 headers = ({
-    'Referer': 'https://www.funda.nl/koop/woudenberg/straat-paulus-potterlaan/+2km/',
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'
+    "authority": "cdn.cookielaw.org",
+    "method": "GET",
+    "path": "/consent/69c5039d-4dfc-4172-bd11-428faaabf101/69c5039d-4dfc-4172-bd11-428faaabf101.json",
+    "scheme": "https",
+    "accept": "*/*",
+    "accept-encoding": "gzip, deflate, br",
+    "accept-language": "en-US,en;q=0.9,nl;q=0.8",
+    "cache-control": "no-cache",
+    "origin": "https://www.funda.nl",
+    "pragma": "no-cache",
+    "referer": "https://www.funda.nl/",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36"
 })
 ap = argparse.ArgumentParser()
 
@@ -20,12 +34,16 @@ ap.add_argument("-s", "--street", required=True,
                 help="Street name")
 ap.add_argument("-r", "--radius", required=False,
                 help="Radius in km")
+ap.add_argument("-v", "--verbose", required=False,
+                action='store_true',
+                help="Additional printing")
 
 args = vars(ap.parse_args())
 
 city = args.get('city').lower()
 street = args.get('street').lower()
 radius = int(args.get('radius', 2))
+verbose = args.get('verbose', False)
 
 print(f'scraping houses in {street}, {city} in radius of {radius} km...')
 
@@ -75,33 +93,37 @@ for page_num in range(100):
             })
 
 print(f'Found {len(cleaned_results)} results')
-print(f'Results overview:')
 
-if len(cleaned_results) > 0:
-    for result in cleaned_results:
-        print(f'street: {result["street_name"]}')
-        print(f'postcode: {result["postcode"]}')
-        print(f'city: {result["city"]}')
-        print(f'price: € {result["price"]} k.k.')
-        print(f'room_total: {result["room_total"]}')
-        print(f'living_area: {result["living_area"]} m²')
-        print(f'plot_area: {result["plot_area"]} m²')
-        print(f'***************')
-        print()
+if verbose:
+    print(f'Results overview:')
 
-    print(f'Total results {len(cleaned_results)}')
+    if len(cleaned_results) > 0:
+        for result in cleaned_results:
+            print(f'street: {result["street_name"]}')
+            print(f'postcode: {result["postcode"]}')
+            print(f'city: {result["city"]}')
+            print(f'price: € {result["price"]} k.k.')
+            print(f'room_total: {result["room_total"]}')
+            print(f'living_area: {result["living_area"]} m²')
+            print(f'plot_area: {result["plot_area"]} m²')
+            print(f'***************')
+            print()
+
+        print(f'Total results {len(cleaned_results)}')
 
 current_data = {
     "entities": []
 }
 
 try:
-    with open('data/data.json') as file:
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    data_file = f'{project_root}/data/data.json'
+    with open(data_file) as file:
         current_data = json.load(file)
 except FileNotFoundError:
     pass
 
-with open('data/data.json', 'w') as file:
+with open(data_file, 'w') as file:
     entities = [*current_data["entities"], *cleaned_results]
     updated_data = {
         "last_updated": now,
